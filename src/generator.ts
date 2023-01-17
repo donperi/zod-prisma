@@ -15,7 +15,7 @@ export const writeImportsForModel = (
 	model: DMMF.Model,
 	sourceFile: SourceFile,
 	config: Config,
-	{ schemaPath, outputPath, clientPath }: PrismaOptions
+	{ schemaPath, outputPath }: PrismaOptions
 ) => {
 	const { relatedModelName } = useModelNames(config)
 	const importList: ImportDeclarationStructure[] = [
@@ -46,14 +46,16 @@ export const writeImportsForModel = (
 
 	const enumFields = model.fields.filter((f) => f.kind === 'enum')
 	const relationFields = model.fields.filter((f) => f.kind === 'object')
-	const relativePath = path.relative(outputPath, clientPath)
+	const jsonFields = model.fields.filter((f) => f.type === 'Json')
 
-	if (enumFields.length > 0) {
+	if (enumFields.length > 0 || jsonFields.length > 0) {
 		importList.push({
 			kind: StructureKind.ImportDeclaration,
-			isTypeOnly: enumFields.length === 0,
-			moduleSpecifier: dotSlash(relativePath),
-			namedImports: enumFields.map((f) => f.type),
+			moduleSpecifier: '@prisma/client',
+			namedImports: [
+				...(jsonFields.length > 0 ? ['Prisma']  : []),
+				...enumFields.map((f) => f.type),
+			]
 		})
 	}
 
@@ -90,6 +92,7 @@ export const writeTypeSpecificSchemas = (
 			writer.newLine()
 			writeArray(writer, [
 				'// Helper schema for JSON fields',
+				`type JsonValue = Prisma.JsonValue`,
 				`type Literal = boolean | number | string${
 					config.prismaJsonNullability ? '' : '| null'
 				}`,
@@ -97,7 +100,7 @@ export const writeTypeSpecificSchemas = (
 				`const literalSchema = z.union([z.string(), z.number(), z.boolean()${
 					config.prismaJsonNullability ? '' : ', z.null()'
 				}])`,
-				'const jsonSchema: z.ZodSchema<Json> = z.lazy(() => z.union([literalSchema, z.array(jsonSchema), z.record(jsonSchema)]))',
+				'const jsonSchema: z.ZodSchema<Json | JsonValue> = z.lazy(() => z.union([literalSchema, z.array(jsonSchema), z.record(jsonSchema)]))',
 			])
 		})
 	}

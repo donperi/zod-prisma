@@ -1,11 +1,13 @@
 import * as z from "zod"
+import Prisma from "@prisma/client"
 import { CompletePresentation, RelatedPresentationModel } from "./index"
 
 // Helper schema for JSON fields
+import JsonValue = Prisma.PrismaClient
 type Literal = boolean | number | string
 type Json = Literal | { [key: string]: Json } | Json[]
 const literalSchema = z.union([z.string(), z.number(), z.boolean()])
-const jsonSchema: z.ZodSchema<Json> = z.lazy(() => z.union([literalSchema, z.array(jsonSchema), z.record(jsonSchema)]))
+const jsonSchema: z.ZodSchema<Json | JsonValue> = z.lazy(() => z.union([literalSchema, z.array(jsonSchema), z.record(jsonSchema)]))
 
 export const SpreadsheetModel = z.object({
   id: z.string(),
