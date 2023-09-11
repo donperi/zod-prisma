@@ -54,7 +54,7 @@ export const writeImportsForModel = (
 			moduleSpecifier: '@prisma/client',
 			namedImports: [
 				...(jsonFields.length > 0 ? ['Prisma']  : []),
-				...enumFields.map((f) => f.type),
+				...[...new Set(enumFields.map((f) => f.type))],
 			]
 		})
 	}
