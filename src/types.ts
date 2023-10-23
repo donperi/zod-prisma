@@ -21,7 +21,7 @@ export const getZodConstructor = (
 				zodType = 'z.bigint()'
 				break
 			case 'DateTime':
-				zodType = 'z.date()'
+				zodType = 'z.union([z.string().transform((val) => new Date(val)), z.date()])'
 				break
 			case 'Float':
 				zodType = 'z.number()'
